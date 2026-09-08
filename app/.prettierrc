@@ -7,7 +7,7 @@
 	"semi": true,
 	"proseWrap": "always",
 	"plugins": ["prettier-plugin-tailwindcss", "prettier-plugin-svelte"],
-	"tailwindConfig": "./src/app.css",
+	"tailwindStylesheet": "./src/app.css",
 	"tailwindFunctions": ["clsx", "cva"],
 	"tailwindPreserveWhitespace": true,
 	"overrides": [
