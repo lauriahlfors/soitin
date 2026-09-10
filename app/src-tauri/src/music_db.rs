@@ -1,6 +1,6 @@
 use sqlx::sqlite::SqlitePool;
 
-pub async fn initialize_db(pool: &SqlitePool) -> sqlx::Result<(), String> {
+pub async fn initialize_tables(pool: &SqlitePool) -> sqlx::Result<(), String> {
     let mut transaction_pool = pool.begin().await.map_err(|e| e.to_string())?;
 
     // Album table
@@ -47,3 +47,4 @@ pub async fn initialize_db(pool: &SqlitePool) -> sqlx::Result<(), String> {
 }
 
 // pub async fn get_album_with_tracks
+
