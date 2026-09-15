@@ -12,7 +12,9 @@ pub async fn initialize_database(app_handle: &AppHandle) -> Result<SqlitePool, S
     let app_dir = app_handle
         .path()
         .app_data_dir()
-        .inspect_err(|e| println!("[soitin-db]: Failed to resolve application data directory path: {e}"))
+        .inspect_err(|e| {
+            println!("[soitin-db]: Failed to resolve application data directory path: {e}")
+        })
         .map_err(|e| e.to_string())?;
     println!(
         "[soitin-db]: Application data directory path found at: {}",
@@ -86,6 +88,20 @@ pub async fn initialize_tables(pool: &SqlitePool) -> sqlx::Result<(), String> {
     .await
     .map_err(|e| format!("[soitin-db]: Failed to create albums table: {}", e))?;
 
+    // Album genres table, join table since an album can have multiple genres.
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS album_genres (
+            album_id TEXT NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
+            genre    TEXT NOT NULL,
+            PRIMARY KEY (album_id, genre)
+        )
+        "#,
+    )
+    .execute(&mut *transaction_pool)
+    .await
+    .map_err(|e| format!("[soitin-db]: Failed to create album_genres table: {}", e))?;
+
     // Tracks table
     sqlx::query(
         r#"
@@ -105,8 +121,13 @@ pub async fn initialize_tables(pool: &SqlitePool) -> sqlx::Result<(), String> {
     .await
     .map_err(|e| format!("[soitin-db]: Failed to create tracks table: {}", e))?;
 
+    // Index on tracks.album_id, makes "all tracks for album X" a fast
+    // lookup instead of a full table scan.
+    sqlx::query("CREATE INDEX IF NOT EXISTS idx_tracks_album_id ON tracks(album_id)")
+        .execute(&mut *transaction_pool)
+        .await
+        .map_err(|e| format!("[soitin-db]: Failed to create tracks index: {}", e))?;
+
     transaction_pool.commit().await.map_err(|e| e.to_string())?;
     Ok(())
 }
-
-// pub async fn get_album_with_tracks
